@@ -10,7 +10,9 @@ import {
   Linkedin,
   Youtube,
   ChevronRight,
+
 } from "lucide-react";
+
 import logo from "@/app/assets/logo.png";
 
 function Footer() {
@@ -194,7 +196,10 @@ function Footer() {
                     className="w-10 h-10 rounded-xl bg-white/10 hover:bg-[#F59E0B] flex items-center justify-center transition backdrop-blur-sm border border-white/20"
                   >
                     <Instagram className="h-5 w-5" />
+                  
+                    
                   </a>
+                
                   {/* <a
                     href="#"
                     className="w-10 h-10 rounded-xl bg-white/10 hover:bg-[#F59E0B] flex items-center justify-center transition backdrop-blur-sm border border-white/20"

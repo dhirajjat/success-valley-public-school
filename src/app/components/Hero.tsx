@@ -3,6 +3,7 @@ import hero from "@/app/assets/home.jpg";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
+import WhatsAppButton from "./WhatsAppButton";
 
 <Helmet>
   <title>Success Valley Public School | Best School in Kumhariya Rao</title>
@@ -129,6 +130,7 @@ function Hero() {
                     <p className="text-xs sm:text-sm text-gray-300">
                       Success Rate
                     </p>
+                    <WhatsAppButton />
                   </div>
                 </div>
               </div>

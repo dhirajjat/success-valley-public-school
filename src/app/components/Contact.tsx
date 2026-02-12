@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Phone, Mail, MapPin } from "lucide-react";
+import emailjs from "@emailjs/browser";
 
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
@@ -7,20 +8,103 @@ import { Input } from "@/app/components/ui/input";
 import { Textarea } from "@/app/components/ui/textarea";
 
 function Contact() {
+  const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
+  const [loading, setLoading] = useState(false);
+
+  const form = useRef<HTMLFormElement>(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
     message: "",
   });
+  const [errors, setErrors] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    message: "",
+  });
+  const validateForm = () => {
+    let newErrors = {
+      name: "",
+      email: "",
+      phone: "",
+      message: "",
+    };
 
-  const handleSubmit = (e: React.FormEvent) => {
+    let isValid = true;
+
+    // Name validation
+    if (!formData.name.trim()) {
+      newErrors.name = "Full name is required";
+      isValid = false;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+      isValid = false;
+    } else if (!emailRegex.test(formData.email)) {
+      newErrors.email = "Enter a valid email address";
+      isValid = false;
+    }
+
+    // Phone validation
+    const phoneRegex = /^[0-9]{10}$/;
+    if (!formData.phone.trim()) {
+      newErrors.phone = "Phone number is required";
+      isValid = false;
+    } else if (!phoneRegex.test(formData.phone)) {
+      newErrors.phone = "Phone must be exactly 10 digits";
+      isValid = false;
+    }
+
+    // Message validation
+    if (!formData.message.trim()) {
+      newErrors.message = "Message cannot be empty";
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
+  const sendEmail = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
-    alert(
-      "Thank you for reaching out! Our admissions team will contact you within 24 hours.",
-    );
-    setFormData({ name: "", email: "", phone: "", message: "" });
+    setLoading(true);
+    if (!validateForm()) return;
+
+    setLoading(true);
+
+    try {
+      await emailjs.sendForm(
+        import.meta.env.VITE_EMAILJS_SERVICE_ID,
+        import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+        form.current!,
+        import.meta.env.VITE_EMAILJS_PUBLIC_KEY,
+      );
+
+      setStatus("success");
+
+      // Reset form state properly
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        message: "",
+      });
+
+      form.current?.reset();
+
+      setTimeout(() => {
+        setStatus("idle");
+      }, 3000);
+    } catch (error) {
+      setStatus("error");
+    }
+
+    setLoading(false);
   };
 
   return (
@@ -55,20 +139,34 @@ function Contact() {
                 <p className="text-blue-100">We'll respond within 24 hours</p>
               </div>
               <CardContent className="p-8">
-                <form onSubmit={handleSubmit} className="space-y-6">
+                {status === "success" && (
+                  <div className="mb-4 p-4 rounded-xl bg-green-100 text-green-700 font-medium text-center">
+                    ✅ Message sent successfully!
+                  </div>
+                )}
+
+                {status === "error" && (
+                  <div className="mb-4 p-4 rounded-xl bg-red-100 text-red-700 font-medium text-center">
+                    ❌ Failed to send message. Try again.
+                  </div>
+                )}
+
+                <form ref={form} onSubmit={sendEmail} className="space-y-6">
                   {/* Floating Label Input - Name */}
                   <div className="relative">
                     <Input
                       id="name"
+                      name="from_name"
                       type="text"
                       placeholder=" "
                       value={formData.name}
-                      onChange={(e: { target: { value: any } }) =>
+                      onChange={(e) =>
                         setFormData({ ...formData, name: e.target.value })
                       }
                       required
                       className="peer h-14 rounded-2xl border-2 border-gray-200 focus:border-[#1E3A8A] pt-6 px-4"
                     />
+
                     <label
                       htmlFor="name"
                       className="absolute left-4 top-1 text-xs text-gray-500 transition-all
@@ -77,21 +175,26 @@ function Contact() {
                     >
                       Full Name *
                     </label>
+                    {errors.name && (
+                      <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+                    )}
                   </div>
 
                   {/* Floating Label Input - Email */}
                   <div className="relative">
                     <Input
                       id="email"
+                      name="from_email"
                       type="email"
                       placeholder=" "
                       value={formData.email}
-                      onChange={(e: { target: { value: any } }) =>
+                      onChange={(e) =>
                         setFormData({ ...formData, email: e.target.value })
                       }
                       required
                       className="peer h-14 rounded-2xl border-2 border-gray-200 focus:border-[#1E3A8A] pt-6 px-4"
                     />
+
                     <label
                       htmlFor="email"
                       className="absolute left-4 top-1 text-xs text-gray-500 transition-all
@@ -100,21 +203,31 @@ function Contact() {
                     >
                       Email Address *
                     </label>
+                    {errors.email && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.email}
+                      </p>
+                    )}
                   </div>
 
                   {/* Floating Label Input - Phone */}
                   <div className="relative">
                     <Input
                       id="phone"
+                      name="phone"
                       type="tel"
+                      inputMode="numeric"
                       placeholder=" "
-                      value={formData.phone}
-                      onChange={(e: { target: { value: any } }) =>
-                        setFormData({ ...formData, phone: e.target.value })
-                      }
-                      required
+                      pattern="[0-9]*"
+                      maxLength={10}
                       className="peer h-14 rounded-2xl border-2 border-gray-200 focus:border-[#1E3A8A] pt-6 px-4"
+                      value={formData.phone}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, "");
+                        setFormData({ ...formData, phone: value });
+                      }}
                     />
+
                     <label
                       htmlFor="phone"
                       className="absolute left-4 top-1 text-xs text-gray-500 transition-all
@@ -123,24 +236,28 @@ function Contact() {
                     >
                       Phone Number *
                     </label>
+                    {errors.phone && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.phone}
+                      </p>
+                    )}
                   </div>
 
                   {/* Floating Label Textarea - Message */}
                   <div className="relative">
                     <Textarea
                       id="message"
+                      name="message"
                       placeholder=" "
                       value={formData.message}
-                      onChange={function (e: { target: { value: any } }): void {
-                        return setFormData({
-                          ...formData,
-                          message: e.target.value,
-                        });
-                      }}
+                      onChange={(e) =>
+                        setFormData({ ...formData, message: e.target.value })
+                      }
                       required
                       rows={5}
                       className="peer rounded-2xl border-2 border-gray-200 focus:border-[#1E3A8A] pt-6 px-4 resize-none"
                     />
+
                     <label
                       htmlFor="message"
                       className="absolute left-4 top-1 text-xs text-gray-500 transition-all
@@ -149,13 +266,26 @@ function Contact() {
                     >
                       Your Message *
                     </label>
+                    {errors.message && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.message}
+                      </p>
+                    )}
                   </div>
 
                   <Button
                     type="submit"
-                    className="w-full h-14 bg-gradient-to-r from-[#F59E0B] to-[#D97706] hover:from-[#D97706] hover:to-[#B45309] text-white rounded-2xl shadow-lg text-lg font-semibold"
+                    disabled={loading}
+                    className="w-full h-14 bg-gradient-to-r from-[#F59E0B] to-[#D97706] hover:from-[#D97706] hover:to-[#B45309] text-white rounded-2xl shadow-lg text-lg font-semibold flex items-center justify-center gap-2"
                   >
-                    Send Message
+                    {loading ? (
+                      <>
+                        <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span>
+                        Sending...
+                      </>
+                    ) : (
+                      "Send Message"
+                    )}
                   </Button>
                 </form>
               </CardContent>
@@ -167,7 +297,7 @@ function Contact() {
               <Card className="border-none shadow-2xl rounded-3xl overflow-hidden">
                 <div className="h-80">
                   <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3925.524471787264!2d76.32402422195351!3d22.991245716344352!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x396331000be72ffb%3A0x364092a68eeb05ec!2sKumariya%20rav!5e0!3m2!1sen!2sin!4v1770154329810!5m2!1sen!2sin" 
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3925.524471787264!2d76.32402422195351!3d22.991245716344352!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x396331000be72ffb%3A0x364092a68eeb05ec!2sKumariya%20rav!5e0!3m2!1sen!2sin!4v1770154329810!5m2!1sen!2sin"
                     width="100%"
                     height="100%"
                     style={{ border: 0, filter: "grayscale(0.3)" }}
@@ -176,7 +306,7 @@ function Contact() {
                     referrerPolicy="no-referrer-when-downgrade"
                     title="School Location Map"
                   ></iframe>
-                  </div>
+                </div>
               </Card>
 
               {/* Contact Information Cards */}

@@ -6,6 +6,7 @@ import Gallery from "./components/Gallery";
 import Contact from "./components/Contact";
 import Footer from "./components/Footer";
 
+
 export default function App() {
   return (
     <div
@@ -32,6 +33,7 @@ export default function App() {
 
       {/* Footer - Dark Mode */}
       <Footer />
+   
     </div>
   );
 }
