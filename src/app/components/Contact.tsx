@@ -84,6 +84,12 @@ function Contact() {
         form.current!,
         import.meta.env.VITE_EMAILJS_PUBLIC_KEY,
       );
+         await emailjs.sendForm(
+      import.meta.env.VITE_EMAILJS_SERVICE_ID,
+      import.meta.env.VITE_EMAILJS_AUTOREPLY_TEMPLATE_ID, // Auto Reply Template
+      form.current,
+      import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+    );
 
       setStatus("success");
 
